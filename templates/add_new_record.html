@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    {% load static %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Home</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+    <script type="text/javascript" src="{% static 'jquery.js' %}"></script>
+    <script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'fontawsome.js' %}"></script>
+    <script type="text/javascript">
+        var width = 300; // We will scale the photo width to this
+        var height = 300; // This will be computed based on the input stream
+
+        var streaming = false;
+
+        var video = null;
+        var canvas = null;
+        var photo = null;
+        var startbutton = null;
+
+        function startup() {
+            video = document.getElementById('video');
+            canvas = document.getElementById('canvas');
+            photo = document.getElementById('photo');
+            startbutton = document.getElementById('startbutton');
+            navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: false
+                })
+                .then(function(stream) {
+                    video.srcObject = stream;
+                    video.play();
+                })
+                .catch(function(err) {
+                    console.log("An error occurred: " + err);
+                });
+            video.addEventListener('canplay', function(ev) {
+                if (!streaming) {
+                    height = video.videoHeight / (video.videoWidth / width);
+
+                    video.setAttribute('width', width);
+                    video.setAttribute('height', height);
+                    canvas.setAttribute('width', width);
+                    canvas.setAttribute('height', height);
+                    streaming = true;
+                }
+            }, false);
+
+
+            clearphoto();
+        }
+
+        function clearphoto() {
+            var context = canvas.getContext('2d');
+            context.fillStyle = "#AAA";
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            var data = canvas.toDataURL('image/png');
+            photo.setAttribute('src', data);
+        }
+
+        function takepicture() {
+            var context = canvas.getContext('2d');
+            if (width && height) {
+                canvas.width = width;
+                canvas.height = height;
+                context.drawImage(video, 0, 0, width, height);
+
+                var data = canvas.toDataURL('image/png');
+                photo.setAttribute('src', data);
+                var ca = document.getElementById("imageInput");
+                ca.width = width;
+                ca.height = height;
+                var c = ca.getContext('2d');
+                var img = new Image;
+                img.onload = function() {
+                    c.drawImage(img, 0, 0); // Or at whatever offset you like
+                };
+                img.src = data;
+                $('#statCapturedProcessing').slideDown(0);
+            } else {
+                clearphoto();
+            }
+        }
+
+        function saveRecord() {
+            var form = new FormData(document.getElementById("recordForm"));
+            var http = new XMLHttpRequest();
+            http.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    var resp = this.responseText;
+                    alert(resp);
+                }
+            };
+
+            http.open("POST", "/saveRecord/", true);
+            http.send(form);
+        }
+
+        function startProcessing(imageId) {
+            var src = document.getElementById(imageId).src;
+            var ca = document.getElementById("imageInput");
+            ca.width = width;
+            ca.height = height;
+            var c = ca.getContext('2d');
+            var img = new Image;
+            img.onload = function() {
+                c.drawImage(img, 0, 0, width, height);
+                dryInc();
+                sendPhotoForProcessing(); // Or at whatever offset you like
+            };
+            img.src = src;
+
+        }
+
+        function dryInc() {
+            var canvas = document.getElementById('imageInput');
+            var val = canvas.toDataURL('image');
+            document.getElementById('canvasImage').innerHTML = val;
+        }
+
+        function sendPhotoForProcessing() {
+            var form = new FormData(document.getElementById("processingForm"));
+            var imageData = document.getElementById("canvasImage").innerHTML;
+            form.append("imageData", imageData);
+            var http = new XMLHttpRequest();
+            http.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    var resp = this.responseText;
+                    alert(resp);
+                }
+            };
+            http.open("POST", "/processImageBreastCancerBinary/", true);
+            http.send(form);
+        }
+
+        function automaticPatientInfoFill() {
+            var http = new XMLHttpRequest();
+            http.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    var resp = this.responseText;
+                    resp = JSON.parse(resp);
+                    document.getElementById("fullName").value = resp["fullName"];
+                    document.getElementById("address").value = resp["address"];
+                    document.getElementById("phone").value = resp["phone"];
+                    document.getElementById("dateOfBirth").value = resp["dateOfBirth"];
+                }
+            };
+            http.open("GET", "/automaticPatientInfoFill?cardNo=" + document.getElementById("cardNo").value, true);
+            http.send();
+        }
+    </script>
+    <style type="text/css">
+        /* The side navigation menu */
+        /* The navigation menu links */
+        
+        .sidenav a {
+            padding: 8px 8px 8px 32px;
+            text-decoration: none;
+            color: white;
+            display: block;
+            transition: 0.3s;
+        }
+        /* When you mouse over the navigation links, change their color */
+        
+        .sidenav a:hover {
+            color: #f1f1f1;
+        }
+        /* Position and style the close button (top right corner) */
+        /* Style page content - use this if you want to push the page content to the right when you open the side navigation */
+        
+        #main {
+            transition: margin-left .5s;
+            padding: 20px;
+        }
+        
+        .boxShadow {
+            box-shadow: 0 8px 8px 0 rgba(200, 200, 200, 0.2), 0 8px 8px 0 rgba(200, 200, 200, 0.19);
+        }
+        /* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
+    </style>
+</head>
+
+<body style="background-image:url('{% static 'images/login_screen_bg.jpg' %}'); background-size:90%">
+    <form id="processingForm" method="POST" enctype="multipart/form-data">{% csrf_token %}
+    </form>
+    <div class="container-fluid" style="width: 100%; background-color:rgb(100,200,100,0.9);padding:0px">
+
+        <div class="row">
+            <div class="col-sm-2">
+                <center>
+                    <div style="padding: 5px;">
+                        <img src="{% static 'images/logo_icon_no_text.png' %}" width="40%"><br>
+                        <h3 style="display: inline" class="text-light">BCCDMS</h3>
+                    </div>
+                </center>
+                <hr>
+                <div class="sidenav">
+                    <br>
+                    <a href="{% url 'Home' %}"><span class="fas fa-home"></span> Home</a>
+                    <hr style="margin: 2px;margin-right:0px;background: rgb(255,255,255,0.4)">
+                    <a href="{% url 'addNewRecord' %}"><span class="fas fa-plus"></span> New record</a>
+                    <hr style="margin: 2px;margin-right:0px;background: rgb(255,255,255,0.4)">
+                    <a href="#"><span class="far fa-file"></span> Browse records</a>
+                    <hr style="margin: 2px;margin-right:0px;background: rgb(255,255,255,0.4)">
+                    <a href="#"><span class="fas fa-folder"></span> Browse images</a>
+                    <hr style="margin: 2px;margin-right:0px;background: rgb(255,255,255,0.4)">
+                    <a href="#"><span class="fas fa-poll"></span> Statistics</a>
+                    <hr style="margin: 2px;margin-right:0px;background: rgb(255,255,255,0.4)">
+                </div>
+            </div>
+            <div class="col-sm-10 bg-light" style="padding-left: 0px;padding-right: 0px;">
+                <div class="bg-white boxShadow">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="width: 20%;text-align: left;">
+                                <img src="{% static 'images/ahariLogo.jpg' %}" class="rounded" style="width:100px;height:100px" />
+                            </td>
+                            <td style="width: 60%;text-align: center;vertical-align: bottom;">
+                                <h4 style="display: inline" class="text-dark">Breast and Cervical Cancer Dignosis and Management System</h4>
+
+                            </td>
+                            <td style="width: 20%;text-align: right;">
+                                <img src="{% static 'images/juLogo.jpg' %}" class="rounded" style="width:100px;height:100px" />
+                            </td>
+                        </tr>
+                    </table>
+                    <table style="text-align: right;width: 100%">
+                        <tr>
+                            <td style="width: 70%; text-align: left; vertical-align: bottom;">
+
+                            </td>
+                            <td class="text-warning" style="vertical-align: bottom">
+                                Welcome, {{fullName}}
+                            </td>
+                            <td style="vertical-align: bottom;">
+                                <button class="btn btn-light"><span class="fas fa-cog"></span></button>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class='card-body' style="height:600px;overflow: auto;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>New record</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="alert alert-info"><span class="fas fa-info-circle"></span>Please fill all the required informations carfully.</p>
+                            <div class="row">
+                                <div class="col-6">
+                                    <form method="POST" id="recordForm" enctype="multipart/form-data" action="{% url 'savePetientInfo' %}">{% csrf_token %}
+
+                                        <table class="table table-striped table-hover">
+                                            <tr>
+                                                <th colspan="2">Patient detial</th>
+                                            </tr>
+                                            <tr>
+                                                <td>Patient Id/ Card N<u>o</u></td>
+                                                <td>
+                                                    <input type="text" id="cardNo" name="cardNo" class="form-control" placeholder="id / card number" onchange="automaticPatientInfoFill()" required>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    Patient full name
+                                                </td>
+                                                <td>
+                                                    <input type="text" class="form-control" id="fullName" name="fullName" placeholder="full name" onfocus="automaticPatientInfoFill()" required>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    Patient address
+                                                </td>
+                                                <td>
+                                                    <input type="text" class="form-control" id="address" name="address" placeholder="address" required="">
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    Patient phone N<u>o</u>
+                                                </td>
+                                                <td>
+                                                    <input type="text" class="form-control" id="phone" name="phone" placeholder="Phone no." required>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    Patient date of birth
+                                                </td>
+                                                <td>
+                                                    <input type="date" class="form-control" id="dateOfBirth" name="dateOfBirth" placeholder="2/2/1999" required>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        <button type="submit" class="btn btn-primary">Save and continue <span class="fas fa-"></span></button>
+                                    </form>
+                                </div>
+
+
+                            </div>
+
+
+                        </div>
+                    </div>
+                </div>
+
+
+
+            </div>
+        </div>
+        <div style="margin-left: 0px; margin-right:0px; background-color:rgb(0,200,0,0.5)">
+            <div class="card" style="background: rgb(100,200,100,0.9); padding: 20px;padding-left: 20%; padding-right: 20%;text-align: center">
+                <p class="text-light" style="font-size:smaller;">
+                    Breast and Cervical Cancer Diagnosis and Management System (BCCDMS), developed by the collaboration of Jimma Institute of technology and Armauer Hansen Research Institute (AHRI), 2021 &copy;</p>
+
+            </div>
+        </div>
+</body>
+
+</html>

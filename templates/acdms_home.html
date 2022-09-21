@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    {% load static %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Home</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+    <script type="text/javascript" src="{% static 'jquery.js' %}"></script>
+    <script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'fontawsome.js' %}"></script>
+    <style type="text/css">
+        .boxShadow {
+            box-shadow: 0 8px 8px 0 rgba(200, 200, 200, 0.2), 0 8px 8px 0 rgba(200, 200, 200, 0.19);
+        }
+        /* The side navigation menu */
+        /* The navigation menu links */
+        
+        .sidenav a {
+            padding: 8px 8px 8px 32px;
+            text-decoration: none;
+            /*font-size: 20px;*/
+            color: white;
+            display: block;
+            transition: 0.3s;
+        }
+        /* When you mouse over the navigation links, change their color */
+        
+        .sidenav a:hover {
+            color: #f1f1f1;
+        }
+        /* Position and style the close button (top right corner) */
+        /* Style page content - use this if you want to push the page content to the right when you open the side navigation */
+        
+        #main {
+            transition: margin-left .5s;
+            padding: 20px;
+        }
+        /* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
+    </style>
+</head>
+
+<body style="background-image:url('{% static 'images/login_screen_bg.jpg' %}'); background-size:90%">
+    <div class="container-fluid" style="width: 100%; background-color:rgb(100,200,100);padding:0px">
+
+        <div class="row">
+            <div class="col-sm-2" style="margin-right: 0px;">
+                <center>
+                    <div style="padding: 5px;text-align: center;">
+                        <img src="{% static 'images/logo_icon_no_text.png' %}" width="40%"><br>
+                        <h3 style="display: inline" class="text-light text-center">BCCDMS</h3>
+                    </div>
+                </center>
+                <hr>
+                <div class="sidenav">
+                    <br>
+                    <a href="{% url 'Home' %}"><span class="fas fa-home"></span> Home</a>
+                    <hr style="margin: 2px;margin-right:0px;background: rgb(255,255,255,0.4)">
+                    <a href="{% url 'addNewRecord' %}"><span class="fas fa-plus"></span> New record</a>
+                    <hr style="margin: 2px;margin-right:0px;background: rgb(255,255,255,0.4)">
+                    <a href="#"><span class="far fa-file"></span> Browse records</a>
+                    <hr style="margin: 2px;margin-right:0px;background: rgb(255,255,255,0.4)">
+                    <a href="#"><span class="fas fa-folder"></span> Browse images</a>
+                    <hr style="margin: 2px;margin-right:0px;background: rgb(255,255,255,0.4)">
+                    <a href="#"><span class="fas fa-poll"></span> Statistics</a>
+                    <hr style="margin: 2px;margin-right:0px;background: rgb(255,255,255,0.4)">
+                </div>
+            </div>
+            <div class="col-sm-10 bg-light" style="padding-left: 0px;padding-right: 0px;">
+                <div class="bg-white boxShadow">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="width: 20%;text-align: left;">
+                                <img src="{% static 'images/ahariLogo.jpg' %}" class="rounded" style="width:100px;height:100px" />
+                            </td>
+                            <td style="width: 60%;text-align: center;vertical-align: bottom;">
+                                <h4 style="display: inline" class="text-dark">Breast and Cervical Cancer Dignosis and Management System</h4>
+
+                            </td>
+                            <td style="width: 20%;text-align: right;">
+                                <img src="{% static 'images/juLogo.jpg' %}" class="rounded" style="width:100px;height:100px" />
+                            </td>
+                        </tr>
+                    </table>
+
+                    <table style="text-align: right;width: 100%">
+                        <tr>
+                            <td style="width: 70%; text-align: left; vertical-align: bottom;">
+
+                            </td>
+                            <td class="text-warning" style="vertical-align: bottom">
+                                Welcome, {{fullName}}
+                            </td>
+                            <td style="vertical-align: bottom;">
+                                <button class="btn btn-light"><span class="fas fa-cog"></span></button>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class='card-body' style="height:600px;overflow: auto;">
+                    <h4>Breast Cancer</h4>
+
+                    <p style="text-align: justify;">
+                        <img src="{% static 'images/breast_cancer_img.jpg' %}" style="float: left"> Breast cancer is cancer that forms in the cells of the breasts. After skin cancer, breast cancer is the most common cancer diagnosed in women in the United
+                        States. Breast cancer can occur in both men and women, but it's far more common in women. Substantial support for breast cancer awareness and research funding has helped created advances in the diagnosis and treatment of breast
+                        cancer. Breast cancer survival rates have increased, and the number of deaths associated with this disease is steadily declining, largely due to factors such as earlier detection, a new personalized approach to treatment and a
+                        better understanding of the disease.
+                    </p>
+                    <br>
+                    <br>
+                    <h5>Symptoms</h5>
+                    <p>
+                        <img src="{% static 'images/breast_cancer_symptom_img.png' %}" width="30%" style="float: right">
+                        <b>Signs and symptoms of breast cancer may include:</b>
+                        <ul>
+                            <li>
+                                A breast lump or thickening that feels different from the surrounding tissue</li>
+                            <li>Change in the size, shape or appearance of a breast</li>
+                            <li>Changes to the skin over the breast, such as dimpling</li>
+                            <li>A newly inverted nipple</li>
+                            <li>Peeling, scaling, crusting or flaking of the pigmented area of skin surrounding the nipple (areola) or breast skin</li>
+                            <li>Redness or pitting of the skin over your breast, like the skin of an orange</li>
+                        </ul>
+                    </p>
+                    <h4>
+                        Cervical Cancer
+                    </h4>
+                    <p>
+                        <img src="{% static 'images/cervical_cancer_image.png' %}" style="float:right;" width="20%"> Cervical cancer is a type of cancer that occurs in the cells of the cervix — the lower part of the uterus that connects to the vagina.
+                        Various strains of the human papillomavirus (HPV), a sexually transmitted infection, play a role in causing most cervical cancer. When exposed to HPV, the body's immune system typically prevents the virus from doing harm. In a
+                        small percentage of people, however, the virus survives for years, contributing to the process that causes some cervical cells to become cancer cells.
+                    </p>
+                    <h5>
+                        Symptoms
+                    </h5>
+                    <p>
+                        <img src="{% static 'images/cervical_cancer_sypmtom_image.png' %}" style="float: left:" width="40%">
+                        <br>
+                        <b>Early-stage cervical cancer generally produces no signs or symptoms.</b>
+                        <br>
+                        <b>Signs and symptoms of more-advanced cervical cancer include:</b>
+                        <ul>
+                            <li>Vaginal bleeding after intercourse, between periods or after menopause</li>
+                            <li>Watery, bloody vaginal discharge that may be heavy and have a foul odor</li>
+                            <li>Pelvic pain or pain during intercourse</li>
+                        </ul>
+                    </p>
+                    <hr>
+                    <br>
+                    <h2>Breast and Cervical Cancer Diagnosis and Management System (BCCDMS)</h2>
+                    <img src="{% static 'images/computer_vision_image.png' %}" style="float: right" width="20%">
+                    <p>BCCDMS is AI based computer vision system built specificaly to identify the Class, Sub class and Grade of a Breast or Cervical cancer by analysing a microscopic image of patient's affected tissue.</p>
+                    <p>The system is also equiped with database management system to manage the records of a patient along with microscopic imagery data of person's affeted tissue.</p>
+
+                    <p>BCCDMS is built by the collaboration of Jimma Institute of Technology, Jimma University and unknown institute in 2021.</p>
+
+                </div>
+            </div>
+
+        </div>
+        <div style="margin-left: 0px; margin-right:0px; background-color:rgb(0,200,0,0.5)">
+            <div class="card" style="background: rgb(100,200,100,0.9); padding: 20px;padding-left: 20%; padding-right: 20%;text-align: center">
+                <p class="text-light" style="font-size:smaller;">
+                    Breast and Cervical Cancer Diagnosis and Management System (BCCDMS), developed by the collaboration of Jimma Institute of technology and Armauer Hansen Research Institute (AHRI), 2021 &copy;</p>
+
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

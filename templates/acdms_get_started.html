@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    {% load static %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+    <script type="text/javascript" src="{% static 'jquery.js' %}"></script>
+    <script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'fontawsome.js' %}"></script>
+</head>
+
+<body style="background-image:url('{% static 'images/login_screen_bg.jpg' %}'); background-size:90%">
+    <div class="container-fluid" style="width: 100%;height: 575px; background-color:rgb(0,0,0,0.8)">
+        <div class="row">
+            <div class="col-sm-4">
+
+            </div>
+            <div class="col-sm-4" style="margin-top: 8%">
+                <div class="card">
+                    <table>
+                        <tr>
+                            <td style="text-align: left;">
+                                <img src="{% static 'images/ahariLogo.jpg' %}" style="width:70px; height:70px" class="rounded">
+                            </td>
+                            <td style="text-align:right">
+                                <img src="{% static 'images/juLogo.jpg' %}" style="width:70px; height:70px" class="rounded">
+                            </td>
+                        </tr>
+                    </table>
+                    <div class="card-head text-center">
+                        <div style="padding: 5px;">
+                            <img src="{% static 'images/logo_icon_white.png' %}" style="float: center">
+                        </div>
+
+                        <h5>Please login</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{% url 'login' %}">{% csrf_token %}
+                            <div class="input-group">
+                                <div class="input-group-append">
+                                    <div class="input-group-text">
+                                        <span class="fas fa-user"></span>
+                                    </div>
+                                    <input type="text" class="form-control" name="username" size="80" placeholder="Username">
+                                </div>
+                            </div>
+                            <br>
+                            <div class="input-group text-center">
+                                <div class="input-group-append">
+                                    <div class="input-group-text">
+                                        <span class="fas fa-key"></span>
+                                    </div>
+                                    <input type="password" class="form-control" name="password" size="80" placeholder="Password">
+                                </div>
+                            </div>
+                            <br>
+
+                            <div style="text-align: center">
+                                <button type="submit" class="btn btn-dark btn-sm" style="padding-left: 50px; padding-right: 50px">Log in</button>
+                            </div>
+                            <br>
+                            <div>
+                                <p class="text-muted">If you forget your username and or password, please contact system administrator.</p>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-4">
+
+            </div>
+        </div>
+        <br>
+        <br>
+    </div>
+    <div style="margin-left: 0px; margin-right:0px; background-color:rgb(0,0,0,0.5)">
+        <div class="card" style="background: rgb(0,0,0,0.9); padding: 20px;padding-left: 20%; padding-right: 20%;text-align: center">
+            <p class="text-light" style="font-size:smaller;font-variant:italic">Breast and Cervical Cancer Diagnosis and Management System (BCCDMS), developed by the collaboration of Jimma Institute of technology and Armauer Hansen Research Institute (AHRI), 2021 &copy;</p>
+        </div>
+    </div>
+</body>
+
+</html>

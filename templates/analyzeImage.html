@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    {% load static %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Home</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+    <script type="text/javascript" src="{% static 'jquery.js' %}"></script>
+    <script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'fontawsome.js' %}"></script>
+    <script type="text/javascript">
+        var width = 300; // We will scale the photo width to this
+        var height = 300; // This will be computed based on the input stream
+
+        var streaming = false;
+
+        var video = null;
+        var canvas = null;
+        var photo = null;
+        var startbutton = null;
+
+        function startup() {
+            video = document.getElementById('video');
+            canvas = document.getElementById('canvas');
+            photo = document.getElementById('photo');
+            startbutton = document.getElementById('startbutton');
+            navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: false
+                })
+                .then(function(stream) {
+                    video.srcObject = stream;
+                    video.play();
+                })
+                .catch(function(err) {
+                    console.log("An error occurred: " + err);
+                });
+            video.addEventListener('canplay', function(ev) {
+                if (!streaming) {
+                    height = video.videoHeight / (video.videoWidth / width);
+
+                    video.setAttribute('width', width);
+                    video.setAttribute('height', height);
+                    canvas.setAttribute('width', width);
+                    canvas.setAttribute('height', height);
+                    streaming = true;
+                }
+            }, false);
+
+
+            clearphoto();
+        }
+
+        function clearphoto() {
+            var context = canvas.getContext('2d');
+            context.fillStyle = "#AAA";
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            var data = canvas.toDataURL('image/png');
+            photo.setAttribute('src', data);
+        }
+
+        function takepicture() {
+            var context = canvas.getContext('2d');
+            if (width && height) {
+                canvas.width = width;
+                canvas.height = height;
+                context.drawImage(video, 0, 0, width, height);
+
+                var data = canvas.toDataURL('image/png');
+                photo.setAttribute('src', data);
+                var ca = document.getElementById("imageInput");
+                ca.width = width;
+                ca.height = height;
+                var c = ca.getContext('2d');
+                var img = new Image;
+                img.onload = function() {
+                    c.drawImage(img, 0, 0); // Or at whatever offset you like
+                };
+                img.src = data;
+                $('#statCapturedProcessing').slideDown(0);
+            } else {
+                clearphoto();
+            }
+        }
+
+        function saveRecord() {
+            var form = new FormData(document.getElementById("recordForm"));
+            var http = new XMLHttpRequest();
+            http.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    var resp = this.responseText;
+                    alert(resp);
+                }
+            };
+
+            http.open("POST", "/saveRecord/", true);
+            http.send(form);
+        }
+
+        function startProcessing(imageId) {
+            var src = document.getElementById(imageId).src;
+            var ca = document.getElementById("imageInput");
+            ca.width = width;
+            ca.height = height;
+            var c = ca.getContext('2d');
+            var img = new Image;
+            img.onload = function() {
+                c.drawImage(img, 0, 0, width, height);
+                dryInc();
+                sendPhotoForProcessing(); // Or at whatever offset you like
+            };
+            img.src = src;
+
+        }
+
+        function dryInc() {
+            var canvas = document.getElementById('imageInput');
+            var val = canvas.toDataURL('image');
+            document.getElementById('canvasImage').innerHTML = val;
+        }
+
+        function sendPhotoForProcessing() {
+            $('#waitingGIFContainer').html("<h6 class='text-center'>Processing ... </h6><img src='/static/images/scanning.gif' width='10%' height='10%'>");
+            $('#waitingGIFContainer2').html("<h6 class='text-center'>Processing ... </h6><img src='/static/images/scanning.gif' width='10%' height='10%'>");
+            document.getElementById('preprocessingContianer').innerHTML ="";
+            var form = new FormData();
+            var imageData = document.getElementById("canvasImage").innerHTML;
+            form.append("imageData", imageData);
+            form.append("cancerName", document.getElementById("cancerName").value);
+            form.append("cervixAnalysingType", document.cervicalClassificationType.cervixAnalysingType.value);
+            var http = new XMLHttpRequest();
+            http.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    var resp = this.responseText;
+                    if (resp == "1") {
+                        $('#waitingGIFContainer').html("<div class='alert alert-danger'>No response. Please check your system</div>");
+                    } else if (resp == "2") {
+                        $('#waitingGIFContainer').html("<div class='alert alert-warning'>Cervical cancer screening is on production.</div>");
+
+                    } else {
+                        result = resp.split(",");
+                        document.getElementById("cName").innerHTML = result[0];
+                        document.getElementById("cancerType").innerHTML = result[1];
+                        document.getElementById("cancerSubType").innerHTML = result[2];
+                        $('#processingWindow').slideUp(0);
+                        $('#waitingGIFContainer').html("");
+                        $('#waitingGIFContainer2').html("");
+                        document.getElementById("saveResultButton").disabled = "";
+                        document.getElementById("printResultButton").disabled = "";
+                        document.getElementById('preprocessingContianer').innerHTML = "<img src='{% static 'temp_imageBGR.png' %}' style='height:150px;width:150px'> <img src='{% static 'temp_imageGRAY.png' %}' style='height:150px;width:150px'> <img src='{% static 'temp_imageRGB.png' %}' style='height:150px;width:150px'>";
+                    }
+                }
+            };
+            http.open("POST", "/processImageBreastCancerBinary/", true);
+            http.send(form);
+        }
+
+        function automaticPatientInfoFill() {
+            var http = new XMLHttpRequest();
+            http.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    var resp = this.responseText;
+                    resp = JSON.parse(resp);
+                    document.getElementById("fullName").value = resp["fullName"];
+                    document.getElementById("address").value = resp["address"];
+                    document.getElementById("phone").value = resp["phone"];
+                    document.getElementById("dateOfBirth").value = resp["dateOfBirth"];
+                }
+            };
+            http.open("GET", "/automaticPatientInfoFill?cardNo=" + document.getElementById("cardNo").value, true);
+            http.send();
+        }
+        function printResult(cardNo) {
+            var imgurl = document.getElementById("imageInput").toDataURL('image/png');
+            var imageHTML = "Image<br><img src='" + imgurl + "'>";
+            setTimeout(() => { // doing nuthing
+            }, 2000); // wait until inc dry. haha
+            var http = new XMLHttpRequest();
+            http.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    var resp = this.responseText;
+                    var prtContent = "<html><head><style type='text/css'>table,tr,td{border:1px solid black;}</style></head><body>";
+                    prtContent += "<h4>Diagnosis result</h4><hr>";
+                    prtContent += "<h6>patient's Basic information</h6>" + resp + "<hr>";
+                    prtContent += "<h6>Result of Image analysis</h6>";
+                    prtContent += document.getElementById("resultContainer").innerHTML;
+                    prtContent += "<hr>";
+                    prtContent += imageHTML;
+                    prtContent += "</body></html>";
+                    var WinPrint = window.open('', '', 'left=0,top=0,width=800,height=900,toolbar=0,scrollbars=0,status=0');
+
+                    WinPrint.document.write(prtContent);
+                    WinPrint.document.close();
+                    WinPrint.focus();
+                    WinPrint.print();
+                    WinPrint.close();
+                }
+            };
+            http.open("GET", "/getPatientInfor?cardNo=" + cardNo, true);
+            http.send();
+
+
+        }
+    </script>
+    <style type="text/css">
+        /* The side navigation menu */
+        /* The navigation menu links */
+        
+        .sidenav a {
+            padding: 8px 8px 8px 32px;
+            text-decoration: none;
+            color: white;
+            display: block;
+            transition: 0.3s;
+        }
+        /* When you mouse over the navigation links, change their color */
+        
+        .sidenav a:hover {
+            color: #f1f1f1;
+        }
+        /* Position and style the close button (top right corner) */
+        /* Style page content - use this if you want to push the page content to the right when you open the side navigation */
+        
+        #main {
+            transition: margin-left .5s;
+            padding: 20px;
+        }
+        
+        .boxShadow {
+            box-shadow: 0 8px 8px 0 rgba(200, 200, 200, 0.2), 0 8px 8px 0 rgba(200, 200, 200, 0.19);
+        }
+        /* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
+    </style>
+</head>
+
+<body style="background-image:url('{% static 'images/login_screen_bg.jpg' %}'); background-size:90%">
+    <form id="processingForm" method="POST" enctype="multipart/form-data">{% csrf_token %}
+    </form>
+    <div class="container-fluid" style="width: 100%; background-color:rgb(100,200,100,0.9);padding:0px">
+
+        <div class="row">
+            <div class="col-sm-2">
+                <center>
+                    <div style="padding: 5px;">
+                        <img src="{% static 'images/logo_icon_no_text.png' %}" width="40%"><br>
+                        <h3 style="display: inline" class="text-light">BCCDMS</h3>
+                    </div>
+                </center>
+                <hr>
+                <div class="sidenav">
+                    <br>
+                    <a href="{% url 'Home' %}"><span class="fas fa-home"></span> Home</a>
+                    <hr style="margin: 2px;margin-right:0px;background: rgb(255,255,255,0.4)">
+                    <a href="{% url 'addNewRecord' %}"><span class="fas fa-plus"></span> New record</a>
+                    <hr style="margin: 2px;margin-right:0px;background: rgb(255,255,255,0.4)">
+                    <a href="#"><span class="far fa-file"></span> Browse records</a>
+                    <hr style="margin: 2px;margin-right:0px;background: rgb(255,255,255,0.4)">
+                    <a href="#"><span class="fas fa-folder"></span> Browse images</a>
+                    <hr style="margin: 2px;margin-right:0px;background: rgb(255,255,255,0.4)">
+                    <a href="#"><span class="fas fa-poll"></span> Statistics</a>
+                    <hr style="margin: 2px;margin-right:0px;background: rgb(255,255,255,0.4)">
+                </div>
+            </div>
+            <div class="col-10 bg-light" style="padding-left: 0px;padding-right:0%px">
+                <div class="bg-white boxShadow">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="width: 20%;text-align: left;">
+                                <img src="{% static 'images/ahariLogo.jpg' %}" class="rounded" style="width:100px;height:100px" />
+                            </td>
+                            <td style="width: 60%;text-align: center;vertical-align: bottom;">
+                                <h4 style="display: inline" class="text-dark">Breast and Cervical Cancer Dignosis and Management System</h4>
+
+                            </td>
+                            <td style="width: 20%;text-align: right;">
+                                <img src="{% static 'images/juLogo.jpg' %}" class="rounded" style="width:100px;height:100px" />
+                            </td>
+                        </tr>
+                    </table>
+                    <table style="text-align: right;width: 100%">
+                        <tr>
+                            <td style="width: 70%; text-align: left; vertical-align: bottom;">
+
+                            </td>
+                            <td class="text-warning" style="vertical-align: bottom">
+                                Welcome, {{fullName}}
+                            </td>
+                            <td style="vertical-align: bottom;">
+                                <button class="btn btn-light"><span class="fas fa-cog"></span></button>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class='card-body' style="margin-bottom: 10%;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Patient ID: {{pCardNo}}</h5>
+                        </div>
+                        <div class="card-body" style="height: auto;">
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <label for="cancerName"><h6>Select the name of the cancer to analyse</h6></label>
+                                    <script>
+                                        function showClassificationTypeWizard(){
+                                            var cType = document.cancerTypeSelect.cancer_name.value;
+                                            if(cType == 'b'){
+                                                $('#cervixAnalysingTypeContainer').fadeOut(100);
+                                            }
+                                            else{
+                                                $('#cervixAnalysingTypeContainer').fadeIn(100);
+                                            }
+                                        }
+                                    </script>
+                                    <form name="cancerTypeSelect">
+                                        <select class="form-control" name="cancer_name" id="cancerName" onchange="showClassificationTypeWizard()">
+                                            <option value="b">BreastCanser</option>
+                                            <option value="c">Cervical Cancer</option>
+                                        </select>
+                                    </form>
+                                    <hr>
+                                    <div style="display: none;" id="cervixAnalysingTypeContainer">
+                                        <div class="card card-body">
+                                            <h6>Select Classification type</h6>
+                                            <form name="cervicalClassificationType">
+                                            <table class="table table-striped">
+                                                <tr><td><input type="radio" name="cervixAnalysingType" value="cervixType" checked></td><td>Cervix Type Classification</td></tr>
+                                                <tr><td><input type="radio" name="cervixAnalysingType" value="cervicalCancer"></td><td>Cervical Cancer Classification</td></tr>
+                                                <tr><td><input type="radio" name="cervixAnalysingType" value="papSmear"></td><td>PapSmear Classification</td></tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-primary" style="width: 200px" onclick="$('#processingWindow').slideDown(0);">Select image for analyzing</button>
+                                    <hr>
+                                   
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="card">
+                                        <div class="card-header bg-success" style="padding-top:0px;padding-bottom:0px">
+                                             <h6 class="text-white">Original Image</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="imageInput" alt="Image" style="border:1px solid #999999;height: 150px;width:150px;">image</canvas>
+                                            <textarea name="canvasImage" id="canvasImage" style="display: none"></textarea>
+                                        </div>
+                                      </div>
+                                    <div class="card">
+                                        <div class="card-header bg-warning" style="padding-top:0px;padding-bottom:0px">
+                                            <h6 class="text-white">Pre proccessed Image</h6>
+                                        </div>
+                                        <div class="card-body" id="preprocessingContianer">
+
+                                        </div>
+                                    </div>
+                                    <div class="card">
+                                        <div class="card-header bg-danger" style="padding-top:0px;padding-bottom:0px">
+                                            <h6 class="text-white"> Analysis Result</h6>
+                                        </div>
+                                        <div class="card-body" id="resultContainer">
+                                            <table class="table table-sm">
+
+                                                <tr>
+                                                    <td>
+                                                        Cancer name
+                                                    </td>
+                                                    <td id="cName">
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        Cancer type
+                                                    </td>
+                                                    <td id="cancerType">
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        Cancer sub type
+                                                    </td>
+                                                    <td id="cancerSubType">
+                                                    </td>
+                                                </tr>
+
+                                            </table>
+                                        </div>
+                                        <div class="card-footer">
+                                            <hr>
+                                            <button class="btn btn-primary" id="saveResultButton" disabled="disabled">Save result</button>
+                                            <button class="btn btn-primary" id="printResultButton" disabled="disabled" onclick="printResult('{{pCardNo}}')">Print result</button>
+
+
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div style="margin-left: 0px; margin-right:0px;width:100%">
+                <div class="card" style="background: rgb(100,200,100,0.9); padding: 20px;padding-left: 20%; padding-right: 20%;text-align: center">
+                    <p class="text-light" style="font-size:smaller;">
+                        Breast and Cervical Cancer Diagnosis and Management System (BCCDMS), developed by the collaboration of Jimma Institute of technology and Armauer Hansen Research Institute (AHRI), 2021 &copy;</p>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- processing window -->
+        <div style="position: fixed;top: 0;left: 0; width: 100%;height: 100%; background: rgb(0,0,0,0.9);display: none" id="processingWindow">
+            <div class="card" style="margin-left: 20%;margin-top:50px;width: 60%">
+                <div class="card-head">
+                    <table style="width: 100%">
+                        <tr>
+                            <td style="width: 95%">
+                                <h4 style="padding-top: 10px;padding-left:10px">Process image</h4>
+                            </td>
+                            <td>
+                                <button class="btn btn-light text-dark" onclick="$('#processingWindow').slideUp(0)"><span class="fas fa-times"></span></button>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <script type="text/javascript">
+                    function captureUploaded(event) {
+                        var image = document.getElementById('output');
+                        image.src = URL.createObjectURL(event.target.files[0]);
+                        $('#buttonContainer').slideUp(0);
+                        $('#imageContainer').slideDown(0);
+                        $('#captureContainer').slideUp(0);
+
+                    }
+
+                    function stopCamera() {
+                        navigator.mediaDevices.getUserMedia({
+                                video: false,
+                                audio: false
+                            })
+                            .then(function(stream) {
+                                video.srcObject = stream;
+                                video.stop();
+                            })
+                            .catch(function(err) {
+                                console.log("An error occurred: " + err);
+                            });
+                    }
+                </script>
+                <div class="card-body">
+
+                    <div id="buttonContainer">
+                        <div class="jumbotron text-center">
+                            <table style="width: 100%; text-align: center">
+                                <tr>
+                                    <th>
+                                        <label for="uploadImageFile"><div class="btn btn-primary" style="width:250px;height: 100px">Upload image<br><span class="fas fa-image" style="font-size:300%"></span></div></label>
+                                        <input type="file" name="" id="uploadImageFile" style="display: none" accept="image/*" onchange="captureUploaded(event)">
+                                    </th>
+                                    <th>
+                                        <button class="btn btn-success" style="width:250px;height: 100px" onclick="$('#captureContainer').slideDown(0);$('#buttonContainer').slideUp(0);$('#imageContainer').slideUp(0);startup();">Capture<br><span class="fas fa-camera" style="font-size:300%"></span></button>
+                                    </th>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="imageContainer" style="display: none">
+                        <button type="button" class="btn btn-link" onclick="$('#imageContainer').slideUp(0); $('#buttonContainer').slideDown(0);"><span class="fas fa-chevron-left"> Select new image</span></button>
+                        <form>{% csrf_token %}
+                            <div class="card-body text-center">
+                                <img src="" id="output" width="300" height="300">
+                                <br>
+                                <div id="waitingGIFContainer">
+
+                                </div>
+                                <br>
+                                <button type="button" class="btn btn-primary" style="width: 200px" onclick="startProcessing('output')">Start processing</button>
+                                <br>
+                                <br>
+
+                            </div>
+                        </form>
+
+                    </div>
+                    <div id="captureContainer" style="display: none">
+                        <button type="button" class="btn btn-link" onclick="$('#captureContainer').slideUp(0);$('#buttonContainer').slideDown(0);$('#imageContainer').slideUp(0);stopCamera()"><span class="fas fa-chevron-left"> back</span></button>
+                        <div class="camera">
+                            <table>
+                                <tr>
+                                    <th>
+                                        <video id="video" style="width: 300px;height: 300px">Video stream not available.</video>
+                                    </th>
+                                    <th>
+
+                                        <button type="button" id="startbutton" class="btn btn-success" onclick="takepicture(event)">Take picture</button>
+
+                                    </th>
+                                    <th>
+                                        <canvas id="canvas" style="display: none"></canvas>
+                                        <img id="photo" alt="The screen capture will appear in this box." style="background-image: url('/static/images/scanning.gif/');">
+                                    </th>
+                                </tr>
+                            </table>
+
+                            <center>
+                                <div id="waitingGIFContainer2">
+
+                                </div>
+                                <button type="button" id="statCapturedProcessing" class="btn btn-primary" style="width: 200px;display: none" onclick="startProcessing('photo')">Start processing</button>
+                            </center>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- end processing window-->
+
+</body>
+
+</html>
